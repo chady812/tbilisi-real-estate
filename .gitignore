@@ -1,0 +1,34 @@
+# ─── Dependencies ────────────────────────────────────────────
+node_modules/
+
+# ─── Build output ────────────────────────────────────────────
+dist/
+*.tsbuildinfo
+
+# ─── Environment (secrets) ───────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ─── Playwright artifacts ────────────────────────────────────
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# ─── Facebook session (auth cookies — never commit) ─────────────────────
+fb-session/
+storageState.json
+
+# ─── Logs ────────────────────────────────────────────────────
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ─── Editor / OS noise ───────────────────────────────────────
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

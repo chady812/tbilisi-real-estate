@@ -1,0 +1,37 @@
+# Real Estate Lead Pipeline & Frontend Workspace Rules (.clinerules)
+
+## 1. Architectural & Placement Boundaries
+- `src/services/` is strictly reserved for LLM, prompt engineering, and structured output parsing. NEVER place database helpers, scrapers, or storage code in `src/services/`.
+- `src/db/` holds all Supabase operations (PostgreSQL queries, Storage bucket interactions, schema mappings).
+- `src/scrapers/` handles HTML/JSON scraping, raw extraction rules, and external network image/data fetching.
+- `src/processors/` handles data transformation, pipeline orchestration (e.g., image mirroring), and data mapping.
+- `src/runners/` contains CLI pipeline entry points and batch execution wrappers.
+- `frontend/` is an isolated Next.js App Router workspace. Do not leak backend-only modules or service-role keys into `frontend/`.
+
+## 2. File Size & Modular Structure
+- **Soft Cap (~150 lines):** Keep individual TypeScript files modular and under ~150 lines.
+- Split oversized files into single-responsibility modules (e.g., separating video rules, photo rules, and JSON types) rather than adding undocumented exceptions.
+- Name helper files clearly using camelCase (`imagePaths.ts`, `fbMediaRules.ts`).
+
+## 3. Data Contracts & Mapping Conventions
+- **Application Logic:** Use `camelCase` for all TypeScript object keys, UI components, and API payload contracts.
+- **Database Mapping:** Database columns use `snake_case`. All DB transforms MUST go through explicit `toRow()` mapping helpers before writing to Supabase.
+- **Scrape Facts vs LLM Contracts:** Keep raw scrape facts (such as raw `imageUrls`) out of LLM prompts and Zod schemas unless specifically required for LLM processing, preventing token bloat and hallucination.
+
+## 4. Execution Speed & Verification Rules
+- **Keep Planning Brief:** State 3–4 bullet points max during the plan phase and transition directly to implementation.
+- **Fast Typecheck Verification:** Always verify code using typecheck commands:
+  - Pipeline: `npm run typecheck`
+  - Frontend: `npm run --prefix frontend typecheck`
+- **NO Heavy Test Harnesses:** Do NOT create custom `.mjs` test runners, headless browser scripts, or run full `next build` commands for small UI feature tasks unless explicitly instructed by the user.
+- **Clean Up Artifacts:** Any temporary verification script created MUST be deleted before completing the task.
+
+## 5. UI & Styling Rules
+- **Zero Layout Shift:** Always supply fixed aspect-ratio containers (e.g., `aspect-[4/3]`) or layout bounds for dynamic media elements before they load.
+- **Image Optimization:** Use `next/image` with explicit `fill`, `sizes`, and `loading="lazy"` properties.
+- **Remote Host Policies:** Keep remote domain allowlists configured explicitly in `frontend/next.config.ts`.
+- **Design System Tokens:** Adhere strictly to the soft light theme tokens (`border-line` slate-200, `bg-paper` slate-50, `bg-panel` white, `text-ink` slate-900, `text-muted` slate-500, `bg-accent` indigo-600 / `bg-accent-soft` indigo-50, `.surface-grid`, `font-mono`) and `lucide-react` icons. Surfaces are `rounded-xl/lg` + `shadow-sm/md` — no `border-2`, no hard offset `shadow-[Npx_Npx_…]`, no dark-theme token variants.
+
+## 6. Documentation & State Sync
+- Maintain `sotp.md` as the single source of truth for project state.
+- Update phase statuses, file line counts in directory maps, and environment configuration sections immediately upon completing sub-tasks.
