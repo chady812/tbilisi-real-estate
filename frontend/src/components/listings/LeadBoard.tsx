@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type MouseEvent } from 'react';
+import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import {
   Check,
   ChevronLeft,
@@ -48,6 +48,8 @@ export type LeadBoardProps = {
   viewMode: ViewMode;
   /** Swaps the board surface (switcher buttons + keyboard `V`). */
   onViewModeChange: (mode: ViewMode) => void;
+  /** Extra controls for the control bar (Phase 7: the batch-scrape trigger). */
+  actions?: ReactNode;
 };
 
 export type ViewMode = 'grid' | 'table';
@@ -329,6 +331,7 @@ export function LeadBoard({
   onSelect,
   viewMode,
   onViewModeChange,
+  actions,
 }: LeadBoardProps) {
 
   /* Local page mirrors the parent-controlled result. */
@@ -398,12 +401,15 @@ export function LeadBoard({
             leads{result.degraded ? ' · degraded' : ''}
           </p>
         </div>
-        <div className="flex items-center gap-1.5">
-          {pagerButton(-1, 'Prev')}
-          <span aria-label={`Page ${page} of ${totalPages}`} className="rounded-md border border-line px-1.5 py-1 text-[10px] font-bold tabular-nums">
-            {page}/{totalPages}
-          </span>
-          {pagerButton(1, 'Next')}
+        <div className="flex items-center gap-2">
+          {actions}
+          <div className="flex items-center gap-1.5">
+            {pagerButton(-1, 'Prev')}
+            <span aria-label={`Page ${page} of ${totalPages}`} className="rounded-md border border-line px-1.5 py-1 text-[10px] font-bold tabular-nums">
+              {page}/{totalPages}
+            </span>
+            {pagerButton(1, 'Next')}
+          </div>
         </div>
       </div>
 

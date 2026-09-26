@@ -27,6 +27,8 @@ export type UseFilteredListings = {
   setPage: (page: number) => void;
   /** Prepends realtime rows into the active result without refetching (Phase 4C). */
   injectLeads: (listings: CleanListing[]) => void;
+  /** Refetches the active filters/page in place — the post-scrape revalidation path. */
+  reload: () => void;
 };
 
 /**
@@ -36,7 +38,9 @@ export type UseFilteredListings = {
  * client state that resets to page 1 whenever the filter signature changes.
  * Stale responses are discarded (the Phase 3A DB fn exposes no AbortSignal).
  * `injectLeads` splices realtime rows into `result` without triggering a
- * refetch (Phase 4C wiring for `useRealtimeListings` + `RealtimeBanner`).
+ * refetch (Phase 4C wiring for `useRealtimeListings` + `RealtimeBanner`), while
+ * `reload` re-runs the fetch for the active filters/page (Phase 7 post-scrape
+ * revalidation — the realtime buffer only carries rows seen live).
  */
 export function useFilteredListings(): UseFilteredListings {
   const searchParams = useSearchParams();
@@ -50,11 +54,20 @@ export function useFilteredListings(): UseFilteredListings {
   const [page, setPage] = useState(1);
   const [result, setResult] = useState<FilteredListingsResult>(IDLE_RESULT);
   const [isLoading, setIsLoading] = useState(true);
+  const [reloadToken, setReloadToken] = useState(0);
 
   /* New filter signature → back to page 1. */
   useEffect(() => {
     setPage(1);
   }, [filterKey]);
+
+  /**
+   * Re-runs the fetch below with the same filters/page (Phase 7). A finished
+   * scrape batch inserts rows without changing the URL, so this is the only way
+   * the board can pick them up — `router.refresh()` re-renders server
+   * components but leaves this effect untouched, its deps never change.
+   */
+  const reload = useCallback((): void => setReloadToken((token) => token + 1), []);
 
   useEffect(() => {
     let stale = false;
@@ -67,7 +80,7 @@ export function useFilteredListings(): UseFilteredListings {
     return () => {
       stale = true;
     };
-  }, [filters, page]);
+  }, [filters, page, reloadToken]);
 
   /**
    * Realtime injection (Phase 4C): dedupes the drained buffer by `id` against
@@ -106,6 +119,6 @@ export function useFilteredListings(): UseFilteredListings {
     });
   }, []);
 
-  return { result, filters, isLoading, page, setPage, injectLeads };
+  return { result, filters, isLoading, page, setPage, injectLeads, reload };
 }
 

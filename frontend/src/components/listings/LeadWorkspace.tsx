@@ -1,7 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
+import { ScrapeButton } from '@/components/ScrapeButton';
 import { LeadBoard, type ViewMode } from '@/components/listings/LeadBoard';
 import { LeadInspectorDrawer } from '@/components/listings/LeadInspectorDrawer';
 import { RealtimeBanner } from '@/components/listings/RealtimeBanner';
@@ -27,9 +29,15 @@ type ToastState = { id: number; message: string; tone: ToastTone } | null;
  * `useKeyboardNavigation` — the global J/K/Esc/C/W/T/V/? command layer —
  * alongside a transient command toast. The `?` shortcuts overlay itself is
  * owned by <ShortcutsProvider> (app layout), driven from the top-nav badge.
+ *
+ * Phase 7 adds the batch-scrape trigger to the board's control bar: a finished
+ * batch revalidates BOTH data paths in `handleScrapeSuccess` — `reload()` for
+ * the client-fetched rows and `router.refresh()` for the server-rendered stats
+ * strip + sync clock.
  */
 export function LeadWorkspace() {
-  const { result, filters, isLoading, setPage, injectLeads } = useFilteredListings();
+  const router = useRouter();
+  const { result, filters, isLoading, setPage, injectLeads, reload } = useFilteredListings();
   const { incomingCount, applyNewLeads, clearBuffer } = useRealtimeListings(filters);
   const [selected, setSelected] = useState<CleanListing | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
@@ -72,6 +80,18 @@ export function LeadWorkspace() {
     if (drained.length > 0) injectLeads(drained);
   };
 
+  /**
+   * Post-scrape revalidation (Phase 7). A batch inserts rows without touching
+   * the URL, so both paths are refreshed: `reload()` re-runs the client fetch
+   * behind the board, `router.refresh()` re-renders the server stats strip.
+   * Neither alone is enough — the board's effect is keyed on `[filters, page]`,
+   * which a refresh never changes.
+   */
+  const handleScrapeSuccess = useCallback((): void => {
+    reload();
+    router.refresh();
+  }, [reload, router]);
+
   return (
     <div className="flex min-h-0 min-w-0 flex-1">
       <RealtimeBanner
@@ -87,6 +107,12 @@ export function LeadWorkspace() {
         onViewModeChange={setViewMode}
         selectedId={activeSelectedId}
         onSelect={handleSelect}
+        actions={
+          <ScrapeButton
+            onSuccess={handleScrapeSuccess}
+            className="min-w-[16rem] shrink-0 gap-1 border-0 bg-transparent p-0 shadow-none"
+          />
+        }
       />
       <LeadInspectorDrawer listing={selected} onClose={() => setSelected(null)} />
       {toast !== null && (

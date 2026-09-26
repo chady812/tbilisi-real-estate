@@ -6,7 +6,7 @@
 > engineer) can understand the system and safely iterate on the LLM prompts
 > without reverse-engineering every file.
 >
-> Last updated: 2026-09-23 (**Phase 4.6 Georgian FB post generator** — `lib/fbPostBuilder.ts` pure formatter + `FbPostModal.tsx` overlay with 1-click clipboard copy, full-width `FB პოსტი` action in `LeadInspectorDrawer` (§12) · **Phase 4.3 image config finalized** — explicit `images.remotePatterns` host allowlist (`*.supabase.co` storage path · `static.ss.ge` · `*.fbcdn.net` · `*.fbsbx.com`), `formats: ['image/avif','image/webp']`, `deviceSizes` 640-1200, `minimumCacheTTL: 14400` in `frontend/next.config.ts` · Phase 4.2 inspector gallery (`ListingGallery.tsx`) · Phase 4.1 card cover (`ListingCover.tsx`)
+> Last updated: 2026-09-26 (**Phase 7 — scraper batch API + trigger UI** — `frontend/src/app/api/scrape/route.ts` `POST { source?: 'all' | 'ss_ge' | 'fb' }` (default `all`) validated then awaited via `promisify(exec)` against the root runner (`npm run start -- --source=…`, cwd = repo root); vocabulary + command map in `lib/scrapeSource.ts`, exec/failure normalisation + in-flight lock in `lib/scrapeRunner.ts`; client contract + response classifier in `lib/scrapeApi.ts`, source dropdown + run trigger + live elapsed status in `components/ScrapeButton.tsx` (`hooks/useElapsedSeconds.ts`) — **mounted in the board control bar**, batch success revalidates via `useFilteredListings#reload()` + `router.refresh()`; 400 / 409 / 500 contract — §6, §12) · 2026-09-23 (**Phase 4.6 Georgian FB post generator** — `lib/fbPostBuilder.ts` pure formatter + `FbPostModal.tsx` overlay with 1-click clipboard copy, full-width `FB პოსტი` action in `LeadInspectorDrawer` (§12) · **Phase 4.3 image config finalized** — explicit `images.remotePatterns` host allowlist (`*.supabase.co` storage path · `static.ss.ge` · `*.fbcdn.net` · `*.fbsbx.com`), `formats: ['image/avif','image/webp']`, `deviceSizes` 640-1200, `minimumCacheTTL: 14400` in `frontend/next.config.ts` · Phase 4.2 inspector gallery (`ListingGallery.tsx`) · Phase 4.1 card cover (`ListingCover.tsx`)
 > · **Phase 3 cross-source deduplication: COMPLETE & ACTIVE** in both ingestion runners (§4, §5, §7.2, §7.3, §9) · seeker capture route disabled by design (§4, §5, §7.3, §9) · USD/GEL rate centralized in `src/config/currency.ts` · 2026-09-14 maintenance cycle: stale `dist/` + residual `liveRun.log` recycled, §6 line counts re-verified · **Frontend Foundation initialized — new §12** (Next.js App Router / Tailwind v4 / typed Supabase client in `frontend/`) · 2026-09-21: **Phase 1 photo contracts landed** — `imageUrls` / `image_urls: string[]` added to `CleanListingSchema`, `FbLeadRecordSchema` and `CleanListingRow` (`src/types/listing.ts`), mirrored in `frontend/src/types/database.ts` (§9, §12) · 2026-09-21 **Phase 2 raw image extraction landed**: ss.ge gallery harvesting (`scrapers/ssGeImages.ts`), Facebook Rule-5-gated photo collection (`scrapers/fbVideoRules.ts` + `scrapers/fbPhotoRules.ts`), `RawFbPost.imageUrls` populated, both `toRow()` mappers write `image_urls`, `CleanListingInsert.image_urls` required again (§5, §6, §9, §10) · 2026-09-21 **Phase 3 storage mirroring landed**: photos download → content-addressed upload into the public `listing-images` bucket → `image_urls` holds permanent Supabase public URLs; `MIRROR_IMAGES=false` keeps raw URLs; bucket recorded in `supabase/migrations/0003_listing_images_bucket.sql` (§13) — frontend gallery UI is Phase 4
 
 ## 1. Mission
@@ -183,6 +183,7 @@ Cross-cutting invariants:
 | Phase 4 | Frontend foundation — `frontend/` Next.js App Router + typed Supabase read client (§12) | ✅ **COMPLETE (2026-09-22)** — 4.1 card covers (`ListingCover.tsx`: fixed-aspect cover, hairline photo-count badge, `// no photo` / `// photo unavailable` placeholders) · 4.2 inspector gallery (`ListingGallery.tsx`: main preview, thumbnail strip, counter, View Original) · 4.3 image config finalized (`next.config.ts`: remote-host allowlist, avif+webp formats, 640–1200 device ladder, `minimumCacheTTL: 14400`) · **4.4 agent-UI removal (2026-09-23)** — badges / Poster-type filter / Owner : Agent cell / poster URL dimension / tokens removed; read layer excludes `is_agent` rows · **4.5 read-filter hardening (2026-09-23)** — stat counters + `injectLeads` exclude `is_agent` rows, NULL-strict `!== false` guards (§12) |
 | Phase 5 | **Pipeline agent purge (2026-09-23)** — `individualEntityOnly` on every ss.ge target; agent verdicts hard-drop on both sources (`ParseListingOutcome` / `enforceNoAgentPoster()` → `AGENT_POSTER`); ≥4-emoji heuristic retired; `is_agent` hardcoded `false` in both `toRow()`s; poster fields removed from app contracts | ✅ **COMPLETE & VERIFIED (2026-09-23)** — 12/12 throwaway-harness checks incl. a live `AGENT_POSTER` drop |
 | Phase 6 | **Soft light UI redesign (2026-09-23)** — `globals.css` tokens re-pointed to a calm light palette (slate-50 canvas, white panels, slate-200 borders, indigo-600 `--accent` + indigo-50 `--accent-soft`); the `prefers-color-scheme: dark` block and `--acid` token are deleted (always light); all brutalist chrome (`border-2`, offset `shadow-[…]`, square corners, `gap-px` hairline grids) replaced with `rounded-xl/lg` + `shadow-sm/md/xl` soft surfaces; overlays get `bg-slate-900/20 backdrop-blur-sm` scrims (§12) | ✅ **COMPLETE (2026-09-23)** — typecheck green; lint parity with baseline (9 pre-existing findings, 0 new) |
+| Phase 7 | **Scraper batch API + trigger UI (2026-09-26)** — trigger UI landed: `lib/scrapeApi.ts` (client envelope mirror + 409 / error / network classifier), `components/ScrapeButton.tsx` (source dropdown, run trigger, live elapsed status, collapsible log) and `hooks/useElapsedSeconds.ts` — mounted in the board's control bar with dual-path revalidation; `POST /api/scrape` (`frontend/src/app/api/scrape/route.ts`) validates `{ source?: 'all' \| 'ss_ge' \| 'fb' }` (default `all`) and awaits the root runner (`npm run start -- --source=…`, cwd = repo root) through `promisify(exec)`; `lib/scrapeSource.ts` owns the source vocabulary + command map, `lib/scrapeRunner.ts` the exec/failure normalisation and the in-flight lock (§6, §12) | ✅ **COMPLETE & VERIFIED (2026-09-26)** — typecheck 0 errors; scoped lint 0 findings (repo baseline unchanged); live 400s for `{"source":"bogus"}`, `{"source":"ssge"}`, malformed JSON and a non-object body; `npm run start -- --source=ss_ge` confirmed to print `Unknown --source value` and exit 1 · the trigger UI passes the same gates (typecheck 0 errors, scoped lint 0 new findings vs its 4-problem baseline) and is mounted in the board's control bar — presence + all three source options confirmed in the server-rendered HTML (§12) |
 
 **Known gaps / TODO:**
 
@@ -324,11 +325,17 @@ and residual `liveRun.log` run dump were recycled; no debug leftovers remain.
 frontend/
 ├── src/
 │   ├── app/
+│   │   ├── api/
+│   │   │   └── scrape/route.ts  (137)  Phase 7: POST /api/scrape — body validation (all | ss_ge | fb),
+│   │   │                                 awaited root-runner exec, 400 / 409 / 500 contract (§12)
 │   │   ├── layout.tsx           (32)  Root layout: Geist + Geist Mono fonts, min-h-full flex shell
 │   │   ├── page.tsx             (60)  CRM shell: nav → stats → filter rail + board → status strip
 │   │   ├── globals.css          (62)  Tailwind v4 entry: @import "tailwindcss" + @theme inline tokens — soft light palette, no dark variant (Phase 6, 2026-09-23)
 │   │   └── favicon.ico
 │   ├── components/
+│   │   ├── ScrapeButton.tsx  (149)  Phase 7: source dropdown + run trigger + live elapsed
+│   │   │                              status for POST /api/scrape — mounted in LeadBoard's
+│   │   │                              control bar via the `actions` slot (§12)
 │   │   ├── layout/
 │   │   │   ├── currency-toggle.tsx           (45)
 │   │   │   ├── FilterSidebar.tsx            (415)  URL-driven filter rail — keyword/price/beds/area/districts/source/deal (soft segmented controls, Phase 6)
@@ -337,10 +344,10 @@ frontend/
 │   │   │   ├── status-bar.tsx                (21)
 │   │   │   └── top-nav.tsx                   (85)
 │   │   └── listings/
-│   │       ├── LeadBoard.tsx                (411)  Leaderboard: grid/table switch, paging, empty/degraded states (soft cards, rounded-xl, Phase 6)
+│   │       ├── LeadBoard.tsx                (447)  Leaderboard: grid/table switch, paging, empty/degraded states (soft cards, rounded-xl, Phase 6) + Phase 7 `actions` control-bar slot
 │   │       ├── LeadCard.tsx                 (261)  Card: rounded-xl shadow-sm cover + specs + action bar (soft tint chips, Phase 6)
 │   │       ├── LeadInspectorDrawer.tsx      (355)  Right-side inspector for the selected lead (soft panel + tinted action states, Phase 6; Phase 4.6 FB post action)
-│   │       ├── LeadWorkspace.tsx             (95)  Board shell: hooks wiring, selection, keyboard nav, toast (soft toast, Phase 6)
+│   │       ├── LeadWorkspace.tsx            (136)  Board shell: hooks wiring, selection, keyboard nav, toast (soft toast, Phase 6) + Phase 7 scrape trigger & dual-path revalidation (§12)
 │   │       ├── FbPostModal.tsx              (122)  Phase 4.6 Georgian FB post preview + 1-click copy (soft overlay chrome, Phase 6)
 │   │       ├── PhoneQrModal.tsx              (98)  Soft overlay chrome (Phase 6); QR modules stay literal dark-on-white hex
 │   │       ├── RealtimeBanner.tsx            (74)  Floating live notifier (soft panel + accent CTA, Phase 6)
@@ -350,7 +357,8 @@ frontend/
 │   │   ├── listings.ts   (143)
 │   │   └── stats.ts      (106)
 │   ├── hooks/
-│   │   ├── useFilteredListings.ts (111)
+│   │   ├── useElapsedSeconds.ts (45)  Phase 7: 1s ticker + `42s` / `3m 07s` formatter (§12)
+│   │   ├── useFilteredListings.ts (124)  Phase 7: + `reload()` — refetch of the active filters/page
 │   │   ├── useKeyboardNavigation.ts
 │   │   ├── useListingFilters.ts (177)  URL filter-state hook (posterType dimension removed 2026-09-23)
 │   │   └── useRealtimeListings.ts (159)
@@ -361,6 +369,12 @@ frontend/
 │   │   ├── filters.ts    (157)
 │   │   ├── outreach.ts   (129)
 │   │   ├── relative-time.ts
+│   │   ├── scrapeApi.ts  (74)  Phase 7: client mirror of the route envelope + 409 / error /
+│   │   │                              network classifier for `requestScrapeBatch()` (§12)
+│   │   ├── scrapeRunner.ts (122) Phase 7: promisify(exec) wrapper (cwd = repo root), failure
+│   │   │                                 normalisation, in-flight lock + getActiveScrapeJob() (§12)
+│   │   ├── scrapeSource.ts (56)  Phase 7: source vocabulary (all | ss_ge | fb), labels and the
+│   │   │                                 `ss_ge` → `--source=ssge` command map (§12)
 │   │   ├── supabase.ts   (59)  Lazy-memoized typed client + isSupabaseConfigured (§12)
 │   │   └── utils.ts      (47)  cn() class merge + formatPhoneNumber() (§12)
 │   ├── providers/
@@ -1235,6 +1249,79 @@ matches the board exactly and nothing can leak through the merge path:
 > `frontend/src/lib/supabase.ts`-style accessors, types are validated at
 > every data boundary, `npm run --prefix frontend typecheck` must stay at
 > 0 errors, and `frontend/src/` is never touched by pipeline work.
+
+### Scraper batch API (Phase 7, 2026-09-26)
+
+`POST /api/scrape` is the first frontend surface that *triggers* work instead of
+reading Supabase: it shells out to the pipeline's unified runner on the server.
+
+| Aspect | Decision |
+|---|---|
+| Contract | `{ source?: 'all' \| 'ss_ge' \| 'fb' }`, default `all`; an omitted/empty body is valid (empty ⇒ `all`), non-JSON or a non-object payload is a `400` |
+| Command | `npm run start -- --source=<ssge \| fb \| all>`, `cwd = path.resolve(process.cwd(), '..')` — npm runs scripts with cwd = `frontend/`, so `..` is the pipeline root that owns `package.json` and the `.env` the child loads via dotenv |
+| Execution | `promisify(exec)`, `maxBuffer: 32 MiB` (the 1 MiB default would kill a run with `ENOBUFS`), `windowsHide`, **no timeout** — real batches take minutes and the child's own exit status ends the request |
+| Response | `{ success, message, output?, error?, source?, command?, durationMs?, exitCode? }`; `output` is the joined stdout/stderr trimmed to its last 20 000 chars |
+| Statuses | `400` unreadable / invalid body or unsupported `source` · `409` a batch is already in flight · `500` non-zero exit (missing pipeline `.env`, scrape failure) or a spawn failure such as `ENOENT` |
+
+Invariants — do not "simplify" these away:
+
+- **`ss_ge` maps to `--source=ssge`.** The public API keeps the spec's
+  snake_case name, but the CLI validates against `ssge | fb | all`
+  (`src/cli/sourceSelection.ts`), so `--source=ss_ge` prints
+  `❌ [cli] Unknown --source value "ss_ge".` and exits 1 (verified live). The
+  translation exists only in `lib/scrapeSource.ts`.
+- **`all` never means bare `npm run start`.** With no flag the CLI opens the
+  interactive job menu and blocks on stdin; `exec` hands the child an open,
+  never-fed pipe, so the request would hang forever. Always pass
+  `--source=all`.
+- **One batch at a time.** `runScrapeBatch` claims the module-level `activeJob`
+  synchronously and releases it in `finally`; `getActiveScrapeJob()` is the hook
+  a future `GET /api/scrape/status` should read (module state is per server
+  process — fine for this single-instance self-hosted setup). Concurrent runs
+  would fight over the FB persistent browser profile (one Chromium per dir).
+- **No request text reaches the shell.** `source` is narrowed to a union and
+  only exposed to the command string through the `SOURCE_TO_CLI_SOURCE` map.
+- **Still unauthenticated.** Anyone who can reach the app can spawn Chromium and
+  OpenAI spend — keep it behind whatever gate fronts the app.
+
+**Trigger UI (Phase 7, mounted 2026-09-26).** `components/ScrapeButton.tsx`
+is the client surface for this route: a `<select>` built from `SCRAPE_SOURCES` +
+`scrapeSourceLabel` (default `all`, disabled while a batch runs), an accent primary
+trigger that swaps `Play "Run batch"` for `Loader2 "Running…"` (`disabled` +
+`aria-busy`), and a `role="status"` readout. `lib/scrapeApi.ts#requestScrapeBatch`
+owns the fetch and classifies every outcome — `200` → `ok`, `409` → `warn` (the
+trigger stays usable, so a retry is one click), any other non-OK / `success:false`
+→ `error` with the pipeline's own `error` text, and a rejected fetch → `error` — so
+the component never branches on status codes and a non-JSON gateway page cannot
+throw. Because a batch runs for minutes, `hooks/useElapsedSeconds.ts` ticks a live
+`1m 12s`-style counter (same wording as `formatDuration` and the API's final
+message) and the raw log renders behind a collapsible `<details>`. `onSuccess`
+fires only on a successful batch and is forward-looking: `useFilteredListings`
+exposes no refetch, and inserted rows already reach the board via `RealtimeBanner`.
+Mounting it is a separate task — `page.tsx` and `top-nav.tsx` are untouched.
+
+**Mount point (2026-09-26).** The trigger lives in the board's control bar:
+`LeadWorkspace` passes it through a new optional `actions` slot on `LeadBoard`,
+which renders it beside the view switch, lead count and pager. ScrapeButton's
+`className` pass-through flattens its panel (`border-0 bg-transparent p-0
+shadow-none` + `min-w-[16rem] shrink-0`) so it reads as toolbar chrome rather
+than a nested card. `LeadBoard` itself stays presentational — it never learns
+what a scrape is.
+
+**Revalidation uses BOTH paths, by necessity.** A finished batch inserts rows
+without touching the URL:
+
+- `useFilteredListings#reload()` bumps an internal `reloadToken` that the fetch
+  effect depends on, so the board re-reads the **active** filters/page (the
+  effect's `stale` guard discards any superseded in-flight request).
+- `router.refresh()` re-runs `page.tsx` → `fetchMarketStats()`, updating the
+  server-rendered stats strip and the sync clock in `TopNav` / `StatusBar`.
+
+`router.refresh()` alone is **not** enough for the board: that effect is keyed on
+`[filters, page]`, and a refresh changes neither (search params keep their
+identity for an unchanged URL), so only the counters would move. The realtime
+path (`useRealtimeListings` → `RealtimeBanner` → `injectLeads`) remains the
+complement for rows pushed while a batch is still running.
 
 ## 13. Storage & image mirroring (Phase 3, 2026-09-21)
 
