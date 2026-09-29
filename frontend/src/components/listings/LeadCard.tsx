@@ -5,6 +5,7 @@ import { Check, Copy, ExternalLink, MessageCircle, Phone, Send } from 'lucide-re
 
 import { PhoneQrModal } from '@/components/listings/PhoneQrModal';
 import { ListingCover } from '@/components/listings/ListingCover';
+import { StarToggleButton } from '@/components/listings/StarToggleButton';
 import { useCurrency } from '@/components/providers/currency-provider';
 import { formatMoney } from '@/lib/currency';
 import { isDesktopPointer } from '@/lib/device';
@@ -146,10 +147,16 @@ export function LeadCard({ listing, onSelect, isSelected = false }: LeadCardProp
         isSelected && 'border-accent/40 bg-accent-soft/40 shadow-md',
       )}
     >
-      {/* Cover photo + photo-count badge (Phase 4.1). Guarded so legacy/partial
-       * rows — or a realtime row refresh with a malformed array — cannot break
-       * the card; pass the raw `image_urls` array as-is. */}
-      <ListingCover imageUrls={Array.isArray(listing.image_urls) ? listing.image_urls : []} />
+      {/* Cover photo + photo-count badge (Phase 4.1) + the working-lead star
+       * (Phase 8). Guarded so legacy/partial rows — or a realtime row refresh
+       * with a malformed array — cannot break the card; pass the raw
+       * `image_urls` array as-is. The star overlays the untouched aspect-[4/3]
+       * frame at the top-right (the photo badge owns the bottom-right), so it
+       * costs the card no layout shift. */}
+      <div className="relative shrink-0">
+        <ListingCover imageUrls={Array.isArray(listing.image_urls) ? listing.image_urls : []} />
+        <StarToggleButton listingId={listing.id} className="absolute top-1.5 right-1.5" />
+      </div>
 
       {/* Meta strip: source · poster · age */}
       <div className="flex items-center justify-between gap-2 border-b border-line px-3 py-2">

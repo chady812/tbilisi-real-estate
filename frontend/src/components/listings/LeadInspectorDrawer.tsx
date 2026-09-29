@@ -6,7 +6,9 @@ import { Check, Copy, ExternalLink, FileText, MessageCircle, Phone, X } from 'lu
 import { FbPostModal } from '@/components/listings/FbPostModal';
 import { ListingGallery } from '@/components/listings/ListingGallery';
 import { PhoneQrModal } from '@/components/listings/PhoneQrModal';
+import { StarToggleButton } from '@/components/listings/StarToggleButton';
 import { useCurrency } from '@/components/providers/currency-provider';
+import { useStarred } from '@/components/providers/starred-provider';
 import { formatMoney } from '@/lib/currency';
 import { isDesktopPointer } from '@/lib/device';
 import {
@@ -63,6 +65,7 @@ const NOTE_INPUT_CLASS =
  */
 export function LeadInspectorDrawer({ listing, onClose }: LeadInspectorDrawerProps) {
   const { currency } = useCurrency();
+  const { isStarred } = useStarred();
   const [notesByLead, setNotesByLead] = useState<Record<string, AgentNote[]>>({});
   const [noteDraft, setNoteDraft] = useState('');
   const [pitchOpen, setPitchOpen] = useState(false);
@@ -92,6 +95,8 @@ export function LeadInspectorDrawer({ listing, onClose }: LeadInspectorDrawerPro
 
   if (listing === null) return null;
 
+  /* Null-guard first: every star read below is keyed on the inspected lead. */
+  const starred = isStarred(listing.id);
   const notes = notesByLead[listing.id] ?? [];
   const primaryPhone = listing.phone_numbers[0] ?? '';
   const canonicalPhone = primaryPhone !== '' ? formatCanonicalPhone(primaryPhone) : '';
@@ -173,16 +178,24 @@ export function LeadInspectorDrawer({ listing, onClose }: LeadInspectorDrawerPro
           <div className="flex min-w-0 items-center gap-1.5">
             <p className="font-mono text-[11px] font-bold uppercase tracking-[0.18em]">Inspector</p>
             <SourceChip source={listing.source} />
+            {starred && (
+              <span className="rounded-md bg-accent-soft px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-[0.08em] text-accent">
+                Working
+              </span>
+            )}
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close inspector"
-            title="Close inspector"
-            className="flex items-center rounded-md border border-line p-1 text-muted transition-colors hover:text-ink"
-          >
-            <X className="size-3.5" aria-hidden />
-          </button>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <StarToggleButton listingId={listing.id} size="md" />
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close inspector"
+              title="Close inspector"
+              className="flex items-center rounded-md border border-line p-1 text-muted transition-colors hover:text-ink"
+            >
+              <X className="size-3.5" aria-hidden />
+            </button>
+          </div>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto font-mono">

@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 
 import { CurrencyProvider } from "@/components/providers/currency-provider";
 import { ShortcutsProvider } from "@/components/providers/shortcuts-provider";
+import { StarredProvider } from "@/components/providers/starred-provider";
 
 import "./globals.css";
 
@@ -30,7 +31,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <CurrencyProvider>
-          <ShortcutsProvider>{children}</ShortcutsProvider>
+          <StarredProvider>
+            <ShortcutsProvider>{children}</ShortcutsProvider>
+          </StarredProvider>
         </CurrencyProvider>
       </body>
     </html>

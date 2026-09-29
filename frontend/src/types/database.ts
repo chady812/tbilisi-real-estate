@@ -74,6 +74,34 @@ export type CleanListing = {
  */
 export type CleanListingInsert = Omit<CleanListing, 'id' | 'created_at' | 'updated_at'>;
 
+/* ─── Starred / working leads (Phase 8) ─────────────────────────────────── */
+
+/**
+ * One row of the `starred_listings` relation — the CRM's bookmark on a lead
+ * whose owner agreed to work with us (migration
+ * `supabase/migrations/0004_starred_listings.sql`).
+ *
+ * Operator state, deliberately kept OUT of `clean_listings`: that table stays
+ * pipeline-owned and read-only for the frontend, so `CleanListing` above is
+ * byte-identical to the pipeline's `CleanListingRow` (`src/types/listing.ts`).
+ * `listing_id` is both the primary key and the FK to `clean_listings.id`
+ * (`on delete cascade`), so a lead can be starred at most once and a deleted
+ * listing can never leave an orphaned star. `created_at` is DB-generated.
+ *
+ * Declared as a type alias (not an `interface`) for the same reason as
+ * `CleanListing` above: aliases carry an implicit index signature, which
+ * supabase-js's `GenericSchemaResolver` requires.
+ */
+export type StarredListing = {
+  /** `clean_listings.id` of the bookmarked lead. */
+  listing_id: string;
+  /** When the lead was starred (DB-generated) — the `/starred` sort key. */
+  created_at: string;
+};
+
+/** Columns the frontend writes — the DB generates `created_at`. */
+export type StarredListingInsert = Omit<StarredListing, 'created_at'>;
+
 /* ─── supabase-js `Database` generic contract ───────────────────────────── */
 
 /**
@@ -91,6 +119,12 @@ export interface Database {
         Update: Partial<CleanListingInsert>;
         Relationships: [];
       };
+      starred_listings: {
+        Row: StarredListing;
+        Insert: StarredListingInsert;
+        Update: Partial<StarredListingInsert>;
+        Relationships: [];
+      };
     };
     Views: { [_ in never]: never };
     Functions: { [_ in never]: never };
@@ -101,3 +135,6 @@ export interface Database {
 
 /** Typed table handle returned by `supabase.from('clean_listings')`. */
 export type CleanListingsTable = Database['public']['Tables']['clean_listings'];
+
+/** Typed table handle returned by `supabase.from('starred_listings')`. */
+export type StarredListingsTable = Database['public']['Tables']['starred_listings'];

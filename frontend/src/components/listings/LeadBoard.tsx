@@ -16,6 +16,7 @@ import {
 
 import { LeadCard } from '@/components/listings/LeadCard';
 import { PhoneQrModal } from '@/components/listings/PhoneQrModal';
+import { StarToggleButton } from '@/components/listings/StarToggleButton';
 import { useCurrency } from '@/components/providers/currency-provider';
 import { formatMoney } from '@/lib/currency';
 import { isDesktopPointer } from '@/lib/device';
@@ -50,6 +51,13 @@ export type LeadBoardProps = {
   onViewModeChange: (mode: ViewMode) => void;
   /** Extra controls for the control bar (Phase 7: the batch-scrape trigger). */
   actions?: ReactNode;
+  /**
+   * Empty-state copy overrides. The default copy points at the filter rail
+   * ("RESET ALL"), which the `/starred` route does not render — that surface
+   * passes its own wording instead of duplicating this component.
+   */
+  emptyTitle?: string;
+  emptyHint?: string;
 };
 
 export type ViewMode = 'grid' | 'table';
@@ -63,7 +71,10 @@ const COPY_FEEDBACK_MS = 1600;
 
 /* ─── Empty / degraded ───────────────────────────────────────────────────── */
 
-function EmptyState({ degraded }: { degraded: boolean }) {
+const DEFAULT_EMPTY_TITLE = '// No leads match';
+const DEFAULT_EMPTY_HINT = 'loosen the filters or hit RESET ALL in the sidebar';
+
+function EmptyState({ degraded, title, hint }: { degraded: boolean; title?: string; hint?: string }) {
   return (
     <section className="grid flex-1 place-items-center px-4 py-10">
       <div
@@ -73,12 +84,12 @@ function EmptyState({ degraded }: { degraded: boolean }) {
         )}
       >
         <p className={cn('text-sm font-bold uppercase tracking-[0.2em]', degraded && 'text-alert')}>
-          {degraded ? 'Supabase offline' : '// No leads match'}
+          {degraded ? 'Supabase offline' : (title ?? DEFAULT_EMPTY_TITLE)}
         </p>
         <p className="mt-2 text-[10px] uppercase tracking-[0.14em] text-muted">
           {degraded
             ? 'degraded — board returns empty until the connection is restored'
-            : 'loosen the filters or hit RESET ALL in the sidebar'}
+            : (hint ?? DEFAULT_EMPTY_HINT)}
         </p>
       </div>
     </section>
@@ -211,6 +222,9 @@ function TableView({
                 </td>
                 <td onClick={(event) => event.stopPropagation()}>
                   <div className="flex items-stretch gap-px bg-line">
+                    {/* Working-lead bookmark (Phase 8) — first in the strip so it
+                     * sits where the grid card's overlay star does. */}
+                    <StarToggleButton listingId={listing.id} variant="flat" />
                     {hasPhone ? (
                       <a
                         href={`tel:+${canonical}`}
@@ -332,6 +346,8 @@ export function LeadBoard({
   viewMode,
   onViewModeChange,
   actions,
+  emptyTitle,
+  emptyHint,
 }: LeadBoardProps) {
 
   /* Local page mirrors the parent-controlled result. */
@@ -422,7 +438,7 @@ export function LeadBoard({
           </div>
         </div>
       ) : result.listings.length === 0 ? (
-        <EmptyState degraded={result.degraded} />
+        <EmptyState degraded={result.degraded} title={emptyTitle} hint={emptyHint} />
       ) : viewMode === 'grid' ? (
         <div className="grid flex-1 content-start gap-3 p-4 [grid-template-columns:repeat(auto-fit,minmax(260px,1fr))]">
           {result.listings.map((listing) => (

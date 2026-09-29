@@ -1,31 +1,44 @@
 'use client';
 
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+
 import { useKeyboardShortcuts } from '@/components/providers/shortcuts-provider';
+import { useStarred } from '@/components/providers/starred-provider';
 import { CurrencyToggle } from '@/components/layout/currency-toggle';
 import { cn } from '@/lib/utils';
 
 /**
- * Primary CRM destinations. Routes mount in later milestones, so items are
- * rendered as inert buttons (no dead links); `aria-pressed` marks the
- * active surface.
+ * Primary CRM destinations. `href: null` marks a surface whose route has not
+ * mounted yet — those stay inert buttons (never dead links) and say so on
+ * hover. Active state derives from the pathname rather than a hard-coded id.
  */
-const NAV_ITEMS: ReadonlyArray<{ id: string; label: string }> = [
-  { id: 'board', label: 'Board' },
-  { id: 'pipeline', label: 'Pipeline' },
-  { id: 'calls', label: 'Calls' },
-  { id: 'map', label: 'Map' },
-  { id: 'feeds', label: 'Feeds' },
+const NAV_ITEMS: ReadonlyArray<{ id: string; label: string; href: string | null }> = [
+  { id: 'board', label: 'Board', href: '/' },
+  { id: 'starred', label: 'Working', href: '/starred' },
+  { id: 'pipeline', label: 'Pipeline', href: null },
+  { id: 'calls', label: 'Calls', href: null },
+  { id: 'map', label: 'Map', href: null },
+  { id: 'feeds', label: 'Feeds', href: null },
 ];
 
-const ACTIVE_NAV = 'board';
+const ITEM_CLASS =
+  'flex items-center gap-1.5 rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-[0.16em] transition-colors';
+const ACTIVE_ITEM = 'bg-accent-soft text-accent';
+const IDLE_ITEM = 'text-muted hover:text-ink';
 
 /**
  * Root CRM top navigation — brand block, live market badge, central currency
  * toggle, primary tabs and a UTC sync clock. The three-zone grid keeps the
- * FX toggle dead-center at any viewport width.
+ * FX toggle dead-center at any viewport width. The `Working` tab is a real
+ * route (`/starred`) and carries the live starred count; the remaining tabs
+ * mount in later milestones and stay inert on purpose.
  */
 export function TopNav({ syncedAt }: { syncedAt: string }) {
+  const pathname = usePathname();
   const { isShortcutsModalOpen, toggleShortcutsModal } = useKeyboardShortcuts();
+  /* Provider is mounted in the root layout, above every route. */
+  const { starredCount } = useStarred();
 
   return (
     <header className="grid grid-cols-[1fr_auto_1fr] items-stretch gap-px border-b border-line bg-line font-mono">
@@ -49,21 +62,35 @@ export function TopNav({ syncedAt }: { syncedAt: string }) {
       {/* Primary tabs + shortcuts badge + sync clock */}
       <div className="flex items-center justify-end gap-4 bg-panel px-4 py-2.5">
         <nav aria-label="Primary" className="hidden items-stretch gap-1 lg:flex">
-          {NAV_ITEMS.map(({ id, label }) => {
-            const active = id === ACTIVE_NAV;
+          {NAV_ITEMS.map(({ id, label, href }) => {
+            if (href === null) {
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  title={`${label} route mounts in a later milestone`}
+                  className={cn(ITEM_CLASS, IDLE_ITEM)}
+                >
+                  {label}
+                </button>
+              );
+            }
+
+            const active = pathname === href;
             return (
-              <button
+              <Link
                 key={id}
-                type="button"
-                aria-pressed={active}
-                title={active ? undefined : `${label} route mounts in a later milestone`}
-                className={cn(
-                  'rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-[0.16em] transition-colors',
-                  active ? 'bg-accent-soft text-accent' : 'text-muted hover:text-ink',
-                )}
+                href={href}
+                aria-current={active ? 'page' : undefined}
+                className={cn(ITEM_CLASS, active ? ACTIVE_ITEM : IDLE_ITEM)}
               >
                 {label}
-              </button>
+                {id === 'starred' && starredCount > 0 && (
+                  <span className="rounded bg-accent px-1 text-[9px] font-black tabular-nums text-white">
+                    {starredCount}
+                  </span>
+                )}
+              </Link>
             );
           })}
         </nav>
