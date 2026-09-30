@@ -27,7 +27,7 @@ type ToastState = { id: number; message: string; tone: ToastTone } | null;
  * mis-click is one click away from being undone.
  */
 export function StarredWorkspace() {
-  const { result, isLoading, reload } = useStarredListings();
+  const { result, isLoading, reload, store } = useStarredListings();
   const [selected, setSelected] = useState<CleanListing | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [toast, setToast] = useState<ToastState>(null);
@@ -76,15 +76,25 @@ export function StarredWorkspace() {
         emptyTitle="// No working leads"
         emptyHint="star a lead on the board — it lands here for follow-up"
         actions={
-          <button
-            type="button"
-            onClick={reload}
-            title="Reload shortlist"
-            className="flex items-center gap-1 rounded-md border border-line px-1.5 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-muted transition-colors hover:text-ink"
-          >
-            <RefreshCw className="size-3" aria-hidden />
-            Refresh
-          </button>
+          <div className="flex items-center gap-2">
+            {store === 'local' && (
+              <span
+                title="Stars are saved on this device only: the starred_listings relation is unavailable. Run supabase/migrations/0004_starred_listings.sql to share them."
+                className="rounded-md border border-alert/40 bg-panel px-1.5 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-alert"
+              >
+                Device only
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={reload}
+              title="Reload shortlist"
+              className="flex items-center gap-1 rounded-md border border-line px-1.5 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-muted transition-colors hover:text-ink"
+            >
+              <RefreshCw className="size-3" aria-hidden />
+              Refresh
+            </button>
+          </div>
         }
       />
       <LeadInspectorDrawer listing={selected} onClose={() => setSelected(null)} />

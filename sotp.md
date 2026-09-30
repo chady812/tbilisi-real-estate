@@ -6,7 +6,7 @@
 > engineer) can understand the system and safely iterate on the LLM prompts
 > without reverse-engineering every file.
 >
-> Last updated: 2026-09-29 (**Phase 8 — Starred / Working leads** — the CRM's bookmark on leads an owner agreed to work with. Operator state gets its own `starred_listings` relation (`supabase/migrations/0004_starred_listings.sql`: `listing_id` PK → `clean_listings(id)` ON DELETE CASCADE, anon SELECT/INSERT/DELETE grants + one permissive policy per command, UPDATE deliberately withheld) so `clean_listings` stays pipeline-owned and read-only for the frontend: `CleanListing` remains 1:1 with `CleanListingRow`, and starring never emits a `clean_listings` UPDATE (no false "new lead" realtime banner). `db/starred.ts` (star set + idempotent insert/delete) · `db/starredListings.ts` (hydration re-sequenced from the star order, `is_agent = false` fail-safe, `MAX_STARRED` 96 cap) · `hooks/useStarredLeads.ts` (optimistic toggle, revert-on-failure) behind `components/listings/StarToggleButton.tsx` (card cover · table strip · inspector header + WORKING chip) · dedicated `/starred` route reusing `LeadBoard`/`LeadInspectorDrawer` via the new shared `components/layout/crm-shell.tsx` (extracted from `app/page.tsx`) · `Working` top-nav tab with live count — §6, §9, §12) · 2026-09-26 (**Phase 7 — scraper batch API + trigger UI** — `frontend/src/app/api/scrape/route.ts` `POST { source?: 'all' | 'ss_ge' | 'fb' }` (default `all`) validated then awaited via `promisify(exec)` against the root runner (`npm run start -- --source=…`, cwd = repo root); vocabulary + command map in `lib/scrapeSource.ts`, exec/failure normalisation + in-flight lock in `lib/scrapeRunner.ts`; client contract + response classifier in `lib/scrapeApi.ts`, source dropdown + run trigger + live elapsed status in `components/ScrapeButton.tsx` (`hooks/useElapsedSeconds.ts`) — **mounted in the board control bar**, batch success revalidates via `useFilteredListings#reload()` + `router.refresh()`; 400 / 409 / 500 contract — §6, §12) · 2026-09-23 (**Phase 4.6 Georgian FB post generator** — `lib/fbPostBuilder.ts` pure formatter + `FbPostModal.tsx` overlay with 1-click clipboard copy, full-width `FB პოსტი` action in `LeadInspectorDrawer` (§12) · **Phase 4.3 image config finalized** — explicit `images.remotePatterns` host allowlist (`*.supabase.co` storage path · `static.ss.ge` · `*.fbcdn.net` · `*.fbsbx.com`), `formats: ['image/avif','image/webp']`, `deviceSizes` 640-1200, `minimumCacheTTL: 14400` in `frontend/next.config.ts` · Phase 4.2 inspector gallery (`ListingGallery.tsx`) · Phase 4.1 card cover (`ListingCover.tsx`)
+> Last updated: 2026-09-30 (Phase 8 fix - starred persistence: the live project had never applied 0004_starred_listings.sql; an unusable relation is now classified in db/postgrestErrors.ts and falls back to a device-local star set in lib/starredStorage.ts, promoted into the relation on the next load) - 2026-09-29 (**Phase 8 — Starred / Working leads** — the CRM's bookmark on leads an owner agreed to work with. Operator state gets its own `starred_listings` relation (`supabase/migrations/0004_starred_listings.sql`: `listing_id` PK → `clean_listings(id)` ON DELETE CASCADE, anon SELECT/INSERT/DELETE grants + one permissive policy per command, UPDATE deliberately withheld) so `clean_listings` stays pipeline-owned and read-only for the frontend: `CleanListing` remains 1:1 with `CleanListingRow`, and starring never emits a `clean_listings` UPDATE (no false "new lead" realtime banner). `db/starred.ts` (star set + idempotent insert/delete) · `db/starredListings.ts` (hydration re-sequenced from the star order, `is_agent = false` fail-safe, `MAX_STARRED` 96 cap) · `hooks/useStarredLeads.ts` (optimistic toggle, revert-on-failure) behind `components/listings/StarToggleButton.tsx` (card cover · table strip · inspector header + WORKING chip) · dedicated `/starred` route reusing `LeadBoard`/`LeadInspectorDrawer` via the new shared `components/layout/crm-shell.tsx` (extracted from `app/page.tsx`) · `Working` top-nav tab with live count — §6, §9, §12) · 2026-09-26 (**Phase 7 — scraper batch API + trigger UI** — `frontend/src/app/api/scrape/route.ts` `POST { source?: 'all' | 'ss_ge' | 'fb' }` (default `all`) validated then awaited via `promisify(exec)` against the root runner (`npm run start -- --source=…`, cwd = repo root); vocabulary + command map in `lib/scrapeSource.ts`, exec/failure normalisation + in-flight lock in `lib/scrapeRunner.ts`; client contract + response classifier in `lib/scrapeApi.ts`, source dropdown + run trigger + live elapsed status in `components/ScrapeButton.tsx` (`hooks/useElapsedSeconds.ts`) — **mounted in the board control bar**, batch success revalidates via `useFilteredListings#reload()` + `router.refresh()`; 400 / 409 / 500 contract — §6, §12) · 2026-09-23 (**Phase 4.6 Georgian FB post generator** — `lib/fbPostBuilder.ts` pure formatter + `FbPostModal.tsx` overlay with 1-click clipboard copy, full-width `FB პოსტი` action in `LeadInspectorDrawer` (§12) · **Phase 4.3 image config finalized** — explicit `images.remotePatterns` host allowlist (`*.supabase.co` storage path · `static.ss.ge` · `*.fbcdn.net` · `*.fbsbx.com`), `formats: ['image/avif','image/webp']`, `deviceSizes` 640-1200, `minimumCacheTTL: 14400` in `frontend/next.config.ts` · Phase 4.2 inspector gallery (`ListingGallery.tsx`) · Phase 4.1 card cover (`ListingCover.tsx`)
 > · **Phase 3 cross-source deduplication: COMPLETE & ACTIVE** in both ingestion runners (§4, §5, §7.2, §7.3, §9) · seeker capture route disabled by design (§4, §5, §7.3, §9) · USD/GEL rate centralized in `src/config/currency.ts` · 2026-09-14 maintenance cycle: stale `dist/` + residual `liveRun.log` recycled, §6 line counts re-verified · **Frontend Foundation initialized — new §12** (Next.js App Router / Tailwind v4 / typed Supabase client in `frontend/`) · 2026-09-21: **Phase 1 photo contracts landed** — `imageUrls` / `image_urls: string[]` added to `CleanListingSchema`, `FbLeadRecordSchema` and `CleanListingRow` (`src/types/listing.ts`), mirrored in `frontend/src/types/database.ts` (§9, §12) · 2026-09-21 **Phase 2 raw image extraction landed**: ss.ge gallery harvesting (`scrapers/ssGeImages.ts`), Facebook Rule-5-gated photo collection (`scrapers/fbVideoRules.ts` + `scrapers/fbPhotoRules.ts`), `RawFbPost.imageUrls` populated, both `toRow()` mappers write `image_urls`, `CleanListingInsert.image_urls` required again (§5, §6, §9, §10) · 2026-09-21 **Phase 3 storage mirroring landed**: photos download → content-addressed upload into the public `listing-images` bucket → `image_urls` holds permanent Supabase public URLs; `MIRROR_IMAGES=false` keeps raw URLs; bucket recorded in `supabase/migrations/0003_listing_images_bucket.sql` (§13) — frontend gallery UI is Phase 4
 
 ## 1. Mission
@@ -349,7 +349,7 @@ frontend/
 │   │   └── listings/
 │   │       ├── LeadBoard.tsx                (463)  Phase 8: + star column in the table view — Leaderboard: grid/table switch, paging, empty/degraded states (soft cards, rounded-xl, Phase 6) + Phase 7 `actions` control-bar slot
 │   │       ├── StarToggleButton.tsx          (109)  Phase 8: shared star control — chip (cover/header) + flat (table strip)
-│   │       ├── StarredWorkspace.tsx          (107)  Phase 8: /starred board column (no rail, realtime or scrape trigger)
+│   │       ├── StarredWorkspace.tsx          (117)  Phase 8: /starred board column | Fix: local-mode "Device only" chip (no rail, realtime or scrape trigger)
 │   │       ├── LeadCard.tsx                 (293)  Phase 8: overlay star on the cover — Card: rounded-xl shadow-sm cover + specs + action bar (soft tint chips, Phase 6)
 │   │       ├── LeadInspectorDrawer.tsx      (395)  Phase 8: header star + WORKING chip; Right-side inspector for the selected lead (soft panel + tinted action states, Phase 6; Phase 4.6 FB post action)
 │   │       ├── LeadWorkspace.tsx            (136)  Board shell: hooks wiring, selection, keyboard nav, toast (soft toast, Phase 6) + Phase 7 scrape trigger & dual-path revalidation (§12)
@@ -360,7 +360,7 @@ frontend/
 │   │       └── ListingGallery.tsx           (139)  Phase 4.2 inspector gallery: main preview, thumbnails, counter, View Original
 │   ├── db/
 │   │   ├── listings.ts   (143)
-│   │   ├── starred.ts   (105)  Phase 8: starred ids + idempotent star/unstar on `starred_listings`
+│   │   ├── postgrestErrors.ts  (34)  Fix: PostgREST unavailable-relation classifier (PGRST205 / 42P01 / 42501)   (147)  Phase 8: starred ids + idempotent star/unstar on `starred_listings`
 │   │   ├── starredListings.ts  (79)  Phase 8: hydrate starred ids into CleanListing rows (MAX_STARRED 96)
 │   │   └── stats.ts      (106)
 │   ├── hooks/
@@ -368,8 +368,8 @@ frontend/
 │   │   ├── useFilteredListings.ts (124)  Phase 7: + `reload()` — refetch of the active filters/page
 │   │   ├── useKeyboardNavigation.ts
 │   │   ├── useListingFilters.ts (177)  URL filter-state hook (posterType dimension removed 2026-09-23)
-│   │   ├── useStarredLeads.ts (94)  Phase 8: starred-id set, isStarred(), optimistic toggleStar (revert on failure)
-│   │   ├── useStarredListings.ts (71)  Phase 8: /starred hydration, re-filtered by the live star set
+│   │   ├── useStarredLeads.ts (144)  Phase 8: starred-id set, isStarred(), optimistic toggleStar (revert on failure)
+│   │   ├── useStarredListings.ts (74)  Phase 8: /starred hydration, re-filtered by the live star set
 │   │   └── useRealtimeListings.ts (159)
 │   ├── lib/
 │   │   ├── currency.ts   (41)
@@ -384,7 +384,7 @@ frontend/
 │   │   │                                 normalisation, in-flight lock + getActiveScrapeJob() (§12)
 │   │   ├── scrapeSource.ts (56)  Phase 7: source vocabulary (all | ss_ge | fb), labels and the
 │   │   │                                 `ss_ge` → `--source=ssge` command map (§12)
-│   │   ├── supabase.ts   (59)  Lazy-memoized typed client + isSupabaseConfigured (§12)
+│   │   ├── starredStorage.ts (47)  Fix: device-local star fallback — a missing migration still works   (59)  Lazy-memoized typed client + isSupabaseConfigured (§12)
 │   │   └── utils.ts      (47)  cn() class merge + formatPhoneNumber() (§12)
 │   ├── providers/
 │   │   ├── currency-provider.tsx
@@ -1432,6 +1432,46 @@ to the pre-Phase-8 baseline (pre-existing imports/effects in `FilterSidebar`,
 `LeadBoard`, `LeadInspectorDrawer`, `ListingGallery`, `useFilteredListings`); no
 new file contributes a finding. The migration must be applied to the live project
 before stars persist — until then the toggle reverts and flags by design.
+**Fix (2026-09-30) — stars persist, and an unusable relation is never silent.**
+The reported symptom ("starring a listing does not persist or display on `/starred`")
+was diagnosed against the live project with the anon key:
+
+```text
+GET /rest/v1/starred_listings?select=listing_id
+404 {"code":"PGRST205","message":"Could not find the table 'public.starred_listings' in the schema cache"}
+```
+
+`clean_listings` answered `200` on the same probe, so the anon key and the RLS read
+path were healthy — **migration `0004` had simply never been applied to that
+project** (no `supabase` CLI or `psql` is available here, and PostgREST cannot run
+DDL). Two client defects then turned that into a dead feature; both are fixed:
+
+1. `db/starred.ts` treated *every* write failure as transient, so the failed
+   upsert made `starListing()` return `false` and the optimistic flip was
+   **reverted** — the click was thrown away with only a `console.warn`. Failures
+   are now classified by `db/postgrestErrors.ts`: `PGRST205` / `42P01` / `42501`
+   (plus the "Could not find the table" / "permission denied" message shapes)
+   mean the RELATION is unusable, anything else is transient. Writes return
+   `'ok' | 'unavailable' | 'failed'` and reads return `{ ids, available }`, so
+   "the relation is missing" can no longer look like "nothing is starred".
+2. An unusable relation now switches the star set to a **device-local fallback**
+   (`lib/starredStorage.ts`, key `sotp.starred.v1`) instead of reverting: the click
+   is honoured, `/starred` hydrates the parked ids through `clean_listings`
+   unchanged, and `useStarredLeads` publishes `store: local` so the UI can say so
+   (the "Device only" chip in the `/starred` control bar, whose tooltip names the
+   migration). The next load **promotes** the parked ids into the relation as soon
+   as it answers, then drops the local copy — applying `0004` later needs no manual
+   cleanup. A fully unconfigured Supabase (`offline`) still stays inert, and a
+   transient failure still reverts and flashes the control red.
+
+Verified against the live project with the installed client: both the read and the
+upsert answer `error.code = PGRST205` and classify as `isRelationUnavailable = true`,
+so both paths now take the fallback branch. `npm run --prefix frontend typecheck` →
+0 errors; lint unchanged at the 9 pre-existing findings.
+
+**Still required for shared persistence:** apply
+`supabase/migrations/0004_starred_listings.sql` in the project's SQL editor. Until
+then stars are per-browser by design, and the UI says so.
 
 ## 13. Storage & image mirroring (Phase 3, 2026-09-21)
 

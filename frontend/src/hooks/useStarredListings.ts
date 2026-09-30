@@ -6,6 +6,7 @@ import { useStarred } from '@/components/providers/starred-provider';
 import { fetchStarredListings } from '@/db/starredListings';
 
 import type { FilteredListingsResult } from '@/db/listings';
+import type { StarStoreMode } from '@/hooks/useStarredLeads';
 
 /* ─── Types ──────────────────────────────────────────────────────────────── */
 
@@ -16,6 +17,8 @@ export type UseStarredListings = {
   isLoading: boolean;
   /** Re-hydrates the same ids in place (manual refresh). */
   reload: () => void;
+  /** Persistence mode - the /starred page renders the device-only notice from it. */
+  store: StarStoreMode;
 };
 
 const IDLE_RESULT: FilteredListingsResult = {
@@ -41,7 +44,7 @@ const IDLE_RESULT: FilteredListingsResult = {
  *    excluded by the `is_agent = false` fail-safe, is not counted).
  */
 export function useStarredListings(): UseStarredListings {
-  const { starredIds, isStarred } = useStarred();
+  const { starredIds, isStarred, store } = useStarred();
   const [rows, setRows] = useState<FilteredListingsResult | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
 
@@ -67,5 +70,5 @@ export function useStarredListings(): UseStarredListings {
     return { ...rows, listings, totalCount: listings.length };
   }, [rows, isStarred]);
 
-  return { result, isLoading: rows === null, reload };
+  return { result, isLoading: rows === null, reload, store };
 }
